@@ -57,7 +57,7 @@ module Reporter = struct
   include Reporter
   include Reporter_local
   include Reporter_interdomain
-  
+
   type target =
     | Local of int
     | Interdomain of (int * int)
@@ -124,29 +124,8 @@ module Process = functor (N : (sig val name : string end)) -> struct
     D.info "installing signal handler for SIGTERM in %s" __LOC__;
     Sys.set_signal Sys.sigterm (Sys.Signal_handle on_sigterm);
 
-    let pidfile = ref "" in
-    let daemonize = ref false in
-    Arg.parse (Arg.align [
-        "-daemon", Arg.Set daemonize, "Create a daemon";
-        "-pidfile", Arg.Set_string pidfile,
-        Printf.sprintf "Set the pid file (default \"%s\")" !pidfile;
-      ])
-      (fun _ -> failwith "Invalid argument")
-      (Printf.sprintf "Usage: %s [-daemon] [-pidfile filename]" N.name);
-
-    if !daemonize then (
-      D.info "Daemonizing ..";
-      Unixext.daemonize ()
-    ) else (
-      D.info "Not daemonizing ..";
-      Sys.catch_break true;
-      Debug.log_to_stdout ()
-    );
-
-    if !pidfile <> "" then
-      (D.debug "Storing process id into specified file ..";
-       Unixext.mkdir_rec (Filename.dirname !pidfile) 0o755;
-       Unixext.pidfile_write !pidfile)
+    Sys.catch_break true;
+    Debug.log_to_stdout ()
 
   let main_loop ~neg_shift ~target ~protocol ~dss_f =
     Reporter.start
